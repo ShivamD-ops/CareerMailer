@@ -1,6 +1,17 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -10,8 +21,11 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   gmailConnected: boolean("gmail_connected").default(false),
   gmailToken: text("gmail_token"),
+  gmailRefreshToken: text("gmail_refresh_token"),
   apollioApiKey: text("apollio_api_key"),
   geminiApiKey: text("gemini_api_key"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const jobApplications = pgTable("job_applications", {
@@ -62,8 +76,20 @@ export const emailAnalytics = pgTable("email_analytics", {
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  gmailConnected: true,
-  gmailToken: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "Name is required"),
 });
 
 export const insertJobApplicationSchema = createInsertSchema(jobApplications).omit({

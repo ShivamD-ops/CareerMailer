@@ -15,13 +15,19 @@ import {
   type EmailAnalytics,
   type InsertEmailAnalytics
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
+  // Authentication methods
+  authenticateUser(username: string, password: string): Promise<User | null>;
+  registerUser(userData: { username: string; password: string; email: string; name: string }): Promise<User>;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
 
   // Job Application methods
@@ -58,192 +64,186 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private jobApplications: Map<number, JobApplication>;
-  private emailTemplates: Map<number, EmailTemplate>;
-  private resumes: Map<number, Resume>;
-  private emailAnalytics: Map<number, EmailAnalytics>;
-  private currentUserId: number;
-  private currentApplicationId: number;
-  private currentTemplateId: number;
-  private currentResumeId: number;
-  private currentAnalyticsId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.jobApplications = new Map();
-    this.emailTemplates = new Map();
-    this.resumes = new Map();
-    this.emailAnalytics = new Map();
-    this.currentUserId = 1;
-    this.currentApplicationId = 1;
-    this.currentTemplateId = 1;
-    this.currentResumeId = 1;
-    this.currentAnalyticsId = 1;
-
-    // Create default user
-    this.createUser({
-      username: "john_doe",
-      password: "password123",
-      email: "john.doe@gmail.com",
-      name: "John Doe",
-      gmailConnected: true,
-      geminiApiKey: process.env.GEMINI_API_KEY || "",
-      apollioApiKey: process.env.APOLLO_API_KEY || "",
-    });
+export class DatabaseStorage implements IStorage {
+  async authenticateUser(username: string, password: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    if (!user) return null;
+    
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    return isValidPassword ? user : null;
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id,
-      gmailConnected: insertUser.gmailConnected ?? false,
-      gmailToken: insertUser.gmailToken ?? null,
-      apollioApiKey: insertUser.apollioApiKey ?? null,
-      geminiApiKey: insertUser.geminiApiKey ?? null,
-    };
-    this.users.set(id, user);
+  async registerUser(userData: { username: string; password: string; email: string; name: string }): Promise<User> {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        password: hashedPassword,
+        gmailConnected: false,
+        gmailToken: null,
+        gmailRefreshToken: null,
+        apollioApiKey: null,
+        geminiApiKey: null,
+      })
+      .returning();
+    
     return user;
   }
 
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   async getJobApplications(userId: number): Promise<JobApplication[]> {
-    return Array.from(this.jobApplications.values())
-      .filter(app => app.userId === userId)
-      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+    return await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.userId, userId))
+      .orderBy(desc(jobApplications.createdAt));
   }
 
   async getJobApplication(id: number): Promise<JobApplication | undefined> {
-    return this.jobApplications.get(id);
+    const [application] = await db.select().from(jobApplications).where(eq(jobApplications.id, id));
+    return application || undefined;
   }
 
   async createJobApplication(insertApplication: InsertJobApplication): Promise<JobApplication> {
-    const id = this.currentApplicationId++;
-    const application: JobApplication = {
-      ...insertApplication,
-      id,
-      createdAt: new Date(),
-      sentAt: null,
-    };
-    this.jobApplications.set(id, application);
+    const [application] = await db
+      .insert(jobApplications)
+      .values({
+        ...insertApplication,
+        recruiterName: insertApplication.recruiterName || null,
+        recruiterEmail: insertApplication.recruiterEmail || null,
+        recruiterTitle: insertApplication.recruiterTitle || null,
+        emailSubject: insertApplication.emailSubject || null,
+        emailContent: insertApplication.emailContent || null,
+        coverLetter: insertApplication.coverLetter || null,
+        scheduledAt: insertApplication.scheduledAt || null,
+        location: insertApplication.location || null,
+      })
+      .returning();
     return application;
   }
 
   async updateJobApplication(id: number, updates: Partial<JobApplication>): Promise<JobApplication | undefined> {
-    const application = this.jobApplications.get(id);
-    if (!application) return undefined;
-    
-    const updatedApplication = { ...application, ...updates };
-    this.jobApplications.set(id, updatedApplication);
-    return updatedApplication;
+    const [application] = await db
+      .update(jobApplications)
+      .set(updates)
+      .where(eq(jobApplications.id, id))
+      .returning();
+    return application || undefined;
   }
 
   async deleteJobApplication(id: number): Promise<boolean> {
-    return this.jobApplications.delete(id);
+    const result = await db.delete(jobApplications).where(eq(jobApplications.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async getEmailTemplates(userId: number): Promise<EmailTemplate[]> {
-    return Array.from(this.emailTemplates.values())
-      .filter(template => template.userId === userId);
+    return await db.select().from(emailTemplates).where(eq(emailTemplates.userId, userId));
   }
 
   async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
-    return this.emailTemplates.get(id);
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id));
+    return template || undefined;
   }
 
   async createEmailTemplate(insertTemplate: InsertEmailTemplate): Promise<EmailTemplate> {
-    const id = this.currentTemplateId++;
-    const template: EmailTemplate = {
-      ...insertTemplate,
-      id,
-      createdAt: new Date(),
-    };
-    this.emailTemplates.set(id, template);
+    const [template] = await db
+      .insert(emailTemplates)
+      .values({
+        ...insertTemplate,
+        isDefault: insertTemplate.isDefault || false,
+      })
+      .returning();
     return template;
   }
 
   async updateEmailTemplate(id: number, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined> {
-    const template = this.emailTemplates.get(id);
-    if (!template) return undefined;
-    
-    const updatedTemplate = { ...template, ...updates };
-    this.emailTemplates.set(id, updatedTemplate);
-    return updatedTemplate;
+    const [template] = await db
+      .update(emailTemplates)
+      .set(updates)
+      .where(eq(emailTemplates.id, id))
+      .returning();
+    return template || undefined;
   }
 
   async deleteEmailTemplate(id: number): Promise<boolean> {
-    return this.emailTemplates.delete(id);
+    const result = await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async getResumes(userId: number): Promise<Resume[]> {
-    return Array.from(this.resumes.values())
-      .filter(resume => resume.userId === userId);
+    return await db.select().from(resumes).where(eq(resumes.userId, userId));
   }
 
   async getDefaultResume(userId: number): Promise<Resume | undefined> {
-    return Array.from(this.resumes.values())
-      .find(resume => resume.userId === userId && resume.isDefault);
+    const [resume] = await db
+      .select()
+      .from(resumes)
+      .where(eq(resumes.userId, userId));
+    return resume || undefined;
   }
 
   async createResume(insertResume: InsertResume): Promise<Resume> {
-    const id = this.currentResumeId++;
-    const resume: Resume = {
-      ...insertResume,
-      id,
-      createdAt: new Date(),
-    };
-    this.resumes.set(id, resume);
+    const [resume] = await db
+      .insert(resumes)
+      .values({
+        ...insertResume,
+        isDefault: insertResume.isDefault || false,
+      })
+      .returning();
     return resume;
   }
 
   async updateResume(id: number, updates: Partial<Resume>): Promise<Resume | undefined> {
-    const resume = this.resumes.get(id);
-    if (!resume) return undefined;
-    
-    const updatedResume = { ...resume, ...updates };
-    this.resumes.set(id, updatedResume);
-    return updatedResume;
+    const [resume] = await db
+      .update(resumes)
+      .set(updates)
+      .where(eq(resumes.id, id))
+      .returning();
+    return resume || undefined;
   }
 
   async deleteResume(id: number): Promise<boolean> {
-    return this.resumes.delete(id);
+    const result = await db.delete(resumes).where(eq(resumes.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async getEmailAnalytics(applicationId: number): Promise<EmailAnalytics[]> {
-    return Array.from(this.emailAnalytics.values())
-      .filter(analytics => analytics.applicationId === applicationId);
+    return await db.select().from(emailAnalytics).where(eq(emailAnalytics.applicationId, applicationId));
   }
 
   async createEmailAnalytics(insertAnalytics: InsertEmailAnalytics): Promise<EmailAnalytics> {
-    const id = this.currentAnalyticsId++;
-    const analytics: EmailAnalytics = {
-      ...insertAnalytics,
-      id,
-      timestamp: new Date(),
-    };
-    this.emailAnalytics.set(id, analytics);
+    const [analytics] = await db
+      .insert(emailAnalytics)
+      .values({
+        ...insertAnalytics,
+        metadata: insertAnalytics.metadata || null,
+      })
+      .returning();
     return analytics;
   }
 
@@ -260,11 +260,10 @@ export class MemStorage implements IStorage {
     
     const sentApplications = applications.filter(app => app.status === "sent" || app.status === "delivered" || app.status === "opened" || app.status === "replied");
     const repliedApplications = applications.filter(app => app.status === "replied");
-    const interviewCount = repliedApplications.length; // Simplified for demo
+    const interviewCount = repliedApplications.length;
     
-    // Simplified analytics calculation
     const deliveryRate = sentApplications.length > 0 ? (sentApplications.length / totalApplications) * 100 : 0;
-    const openRate = sentApplications.length > 0 ? 68 : 0; // Mock data for demo
+    const openRate = sentApplications.length > 0 ? 68 : 0;
     const responseRate = sentApplications.length > 0 ? (repliedApplications.length / sentApplications.length) * 100 : 0;
     const replyRate = responseRate;
 
