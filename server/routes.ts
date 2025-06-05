@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertJobApplicationSchema, insertEmailTemplateSchema, insertResumeSchema } from "@shared/schema";
+import { setupAuth, setupAuthRoutes, requireAuth } from "./auth";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -17,24 +18,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync("uploads");
   }
 
-  // Get current user (simplified for demo - using user ID 1)
-  app.get("/api/user", async (req, res) => {
-    try {
-      const user = await storage.getUser(1);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get user" });
-    }
-  });
+  // Setup authentication
+  setupAuth(app);
+  await setupAuthRoutes(app);
 
   // Update user settings
-  app.patch("/api/user", async (req, res) => {
+  app.patch("/api/user", requireAuth, async (req, res) => {
     try {
       const updates = req.body;
-      const user = await storage.updateUser(1, updates);
+      const user = await storage.updateUser(req.session.userId!, updates);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -45,9 +37,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get job applications
-  app.get("/api/applications", async (req, res) => {
+  app.get("/api/applications", requireAuth, async (req, res) => {
     try {
-      const applications = await storage.getJobApplications(1);
+      const applications = await storage.getJobApplications(req.session.userId!);
       res.json(applications);
     } catch (error) {
       res.status(500).json({ message: "Failed to get applications" });
@@ -55,11 +47,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create job application
-  app.post("/api/applications", async (req, res) => {
+  app.post("/api/applications", requireAuth, async (req, res) => {
     try {
       const validatedData = insertJobApplicationSchema.parse({
         ...req.body,
-        userId: 1,
+        userId: req.session.userId!,
       });
       const application = await storage.createJobApplication(validatedData);
       res.status(201).json(application);
@@ -69,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update job application
-  app.patch("/api/applications/:id", async (req, res) => {
+  app.patch("/api/applications/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
@@ -84,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete job application
-  app.delete("/api/applications/:id", async (req, res) => {
+  app.delete("/api/applications/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteJobApplication(id);
@@ -98,10 +90,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Parse job description with AI
-  app.post("/api/parse-job", async (req, res) => {
+  app.post("/api/parse-job", requireAuth, async (req, res) => {
     try {
       const { jobDescription } = req.body;
-      const user = await storage.getUser(1);
+      const user = await storage.getUser(req.session.userId!);
       
       if (!user?.geminiApiKey) {
         return res.status(400).json({ message: "Gemini API key not configured" });
@@ -171,10 +163,10 @@ Example format:
   });
 
   // Generate cover letter with AI
-  app.post("/api/generate-cover-letter", async (req, res) => {
+  app.post("/api/generate-cover-letter", requireAuth, async (req, res) => {
     try {
       const { jobDescription, parsedJob, userProfile } = req.body;
-      const user = await storage.getUser(1);
+      const user = await storage.getUser(req.session.userId!);
       
       if (!user?.geminiApiKey) {
         return res.status(400).json({ message: "Gemini API key not configured" });
@@ -290,10 +282,10 @@ Format as valid JSON only.`;
   });
 
   // Find recruiter contacts (Apollo.io integration)
-  app.post("/api/find-recruiter", async (req, res) => {
+  app.post("/api/find-recruiter", requireAuth, async (req, res) => {
     try {
       const { company } = req.body;
-      const user = await storage.getUser(1);
+      const user = await storage.getUser(req.session.userId!);
       
       if (!user?.apollioApiKey) {
         return res.status(400).json({ message: "Apollo.io API key not configured" });
