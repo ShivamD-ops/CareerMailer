@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 213 13% 13%; /* #202124 */
+  --muted: 210 11% 98%; /* #F8F9FA */
+  --muted-foreground: 217 9% 44%; /* #5F6368 */
+  --popover: 0 0% 100%;
+  --popover-foreground: 213 13% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 213 13% 13%;
+  --border: 210 11% 90%;
+  --input: 210 11% 90%;
+  --primary: 217 91% 60%; /* #4285F4 */
+  --primary-foreground: 217 100% 99%;
+  --secondary: 210 11% 98%;
+  --secondary-foreground: 213 13% 13%;
+  --accent: 210 11% 98%;
+  --accent-foreground: 213 13% 13%;
+  --destructive: 4 90% 58%; /* #EA4335 */
+  --destructive-foreground: 0 0% 98%;
+  --ring: 213 13% 13%;
+  --radius: 0.5rem;
+  --success: 142 69% 58%; /* #34A853 */
+  --success-foreground: 0 0% 98%;
+  --warning: 4 90% 58%;
+  --warning-foreground: 0 0% 98%;
+  --gmail-blue: 217 91% 60%; /* #4285F4 */
+  --success-green: 142 69% 58%; /* #34A853 */
+  --warning-red: 4 90% 58%; /* #EA4335 */
+  --text-secondary: 217 9% 44%; /* #5F6368 */
+}
+
+.dark {
+  --background: 222 13% 11%;
+  --foreground: 0 0% 98%;
+  --muted: 222 13% 16%;
+  --muted-foreground: 217 9% 65%;
+  --popover: 222 13% 11%;
+  --popover-foreground: 0 0% 98%;
+  --card: 222 13% 11%;
+  --card-foreground: 0 0% 98%;
+  --border: 222 13% 16%;
+  --input: 222 13% 16%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 217 100% 99%;
+  --secondary: 222 13% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 222 13% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 4 62% 45%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 217 9% 65%;
+  --gmail-blue: 217 91% 60%;
+  --success-green: 142 69% 58%;
+  --warning-red: 4 90% 58%;
+  --text-secondary: 217 9% 65%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+  
+  .btn-success {
+    @apply bg-success text-success-foreground hover:bg-success/90 transition-colors;
+  }
+  
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors;
+  }
+  
+  .text-success {
+    color: hsl(var(--success-green));
+  }
+  
+  .text-warning {
+    color: hsl(var(--warning-red));
+  }
+  
+  .text-gmail-blue {
+    color: hsl(var(--gmail-blue));
+  }
+  
+  .bg-gmail-blue {
+    background-color: hsl(var(--gmail-blue));
+  }
+  
+  .bg-success-green {
+    background-color: hsl(var(--success-green));
+  }
+  
+  .bg-warning-red {
+    background-color: hsl(var(--warning-red));
+  }
+  
+  .border-gmail-blue {
+    border-color: hsl(var(--gmail-blue));
+  }
+  
+  .hover\:bg-gmail-blue:hover {
+    background-color: hsl(var(--gmail-blue));
+  }
+  
+  .hover\:bg-blue-600:hover {
+    background-color: hsl(217 91% 55%);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Animation for smooth interactions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-value);
+  }
+}
+
+.progress-bar {
+  animation: progress 0.5s ease-out;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
