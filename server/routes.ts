@@ -327,10 +327,10 @@ Format as valid JSON only.`;
   });
 
   // Send email via Gmail API
-  app.post("/api/send-email", async (req, res) => {
+  app.post("/api/send-email", requireAuth, async (req, res) => {
     try {
       const { to, subject, body, applicationId } = req.body;
-      const user = await storage.getUser(1);
+      const user = await storage.getUser(req.session.userId!);
       
       if (!user?.gmailToken) {
         return res.status(400).json({ message: "Gmail not connected" });
@@ -360,9 +360,9 @@ Format as valid JSON only.`;
   });
 
   // Get email templates
-  app.get("/api/templates", async (req, res) => {
+  app.get("/api/templates", requireAuth, async (req, res) => {
     try {
-      const templates = await storage.getEmailTemplates(1);
+      const templates = await storage.getEmailTemplates(req.session.userId!);
       res.json(templates);
     } catch (error) {
       res.status(500).json({ message: "Failed to get templates" });
@@ -370,11 +370,11 @@ Format as valid JSON only.`;
   });
 
   // Create email template
-  app.post("/api/templates", async (req, res) => {
+  app.post("/api/templates", requireAuth, async (req, res) => {
     try {
       const validatedData = insertEmailTemplateSchema.parse({
         ...req.body,
-        userId: 1,
+        userId: req.session.userId!,
       });
       const template = await storage.createEmailTemplate(validatedData);
       res.status(201).json(template);
@@ -384,29 +384,29 @@ Format as valid JSON only.`;
   });
 
   // Upload resume
-  app.post("/api/upload-resume", upload.single("resume"), async (req, res) => {
+  app.post("/api/upload-resume", requireAuth, upload.single("resume"), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
       const resume = await storage.createResume({
-        userId: 1,
+        userId: req.session.userId!,
         fileName: req.file.originalname,
         filePath: req.file.path,
         isDefault: req.body.isDefault === "true",
       });
 
       res.status(201).json(resume);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: "Failed to upload resume", error: error.message });
     }
   });
 
   // Get resumes
-  app.get("/api/resumes", async (req, res) => {
+  app.get("/api/resumes", requireAuth, async (req, res) => {
     try {
-      const resumes = await storage.getResumes(1);
+      const resumes = await storage.getResumes(req.session.userId!);
       res.json(resumes);
     } catch (error) {
       res.status(500).json({ message: "Failed to get resumes" });
@@ -414,9 +414,9 @@ Format as valid JSON only.`;
   });
 
   // Get analytics summary
-  app.get("/api/analytics", async (req, res) => {
+  app.get("/api/analytics", requireAuth, async (req, res) => {
     try {
-      const analytics = await storage.getAnalyticsSummary(1);
+      const analytics = await storage.getAnalyticsSummary(req.session.userId!);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: "Failed to get analytics" });

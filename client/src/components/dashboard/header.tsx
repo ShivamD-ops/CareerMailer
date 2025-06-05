@@ -1,12 +1,11 @@
-import { Mail, Bell } from "lucide-react";
+import { Mail, Bell, Settings, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
-  const { data: user } = useQuery({
-    queryKey: ["/api/user"],
-  });
+  const { user, logout } = useAuth();
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
