@@ -66,6 +66,7 @@ export async function setupAuthRoutes(app: express.Express) {
         gmailConnected: user.gmailConnected,
       });
     } catch (error: any) {
+      console.error("Registration error:", error);
       res.status(400).json({ error: error.message || "Registration failed" });
     }
   });

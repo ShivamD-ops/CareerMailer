@@ -1,14 +1,15 @@
-import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+import { Routes, Route } from "react-router-dom";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster";
+import { useEffect } from "react";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,23 +21,22 @@ function Router() {
       </div>
     );
   }
-
   if (!isAuthenticated) {
     return (
-      <Switch>
-        <Route path="/register" component={Register} />
-        <Route path="/" component={Login} />
-        <Route component={Login} />
-      </Switch>
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
     );
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/settings" component={Settings} />
-      <Route component={NotFound} />
-    </Switch>
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route element={<NotFound />} />
+    </Routes>
   );
 }
 
