@@ -45,13 +45,21 @@ export default function Header() {
                 3
               </Badge>
             </div>
+            <Link href="/settings">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </Link>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{user?.name || "John Doe"}</span>
+              <span className="text-sm font-medium">{user?.name || "User"}</span>
               <div className="w-8 h-8 bg-gmail-blue rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-medium">
-                  {user?.name?.split(" ").map(n => n[0]).join("") || "JD"}
+                  {user?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
                 </span>
               </div>
+              <Button variant="ghost" size="icon" onClick={logout}>
+                <LogOut className="h-5 w-5 text-muted-foreground" />
+              </Button>
             </div>
           </div>
         </div>
