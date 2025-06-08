@@ -3,12 +3,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Upload, FileText, Check, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
+type User = {
+  email: string;
+  // add other user properties if needed
+};
+
+type Analytics = {
+  totalApplications?: number;
+  // add other analytics properties if needed
+};
+
 export default function Sidebar() {
-  const { data: user } = useQuery({
+  const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
   });
 
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
   });
 

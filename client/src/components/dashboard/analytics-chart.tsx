@@ -3,8 +3,15 @@ import { Progress } from "@/components/ui/progress";
 import { TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
+type Analytics = {
+  deliveryRate?: number;
+  openRate?: number;
+  replyRate?: number;
+  interviewRate?: number;
+};
+
 export default function AnalyticsChart() {
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
   });
 

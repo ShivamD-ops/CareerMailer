@@ -2,8 +2,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send, Reply, Calendar, FileText, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
+type Analytics = {
+  totalApplications: number;
+  responseRate: number;
+  interviewCount: number;
+  // add other properties if needed
+};
+
 export default function StatsOverview() {
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<Analytics>({
     queryKey: ["/api/analytics"],
   });
 

@@ -246,6 +246,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return analytics;
   }
+  async findUserByEmail(email: string): Promise<User | null> {
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+  return user ?? null;
+}
 
   async getAnalyticsSummary(userId: number): Promise<{
     totalApplications: number;

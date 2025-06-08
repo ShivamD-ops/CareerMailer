@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Mail, User, Lock, Eye, EyeOff, UserPlus } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,7 +29,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const [, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -46,7 +53,7 @@ export default function Register() {
         title: "Account created successfully",
         description: "Welcome to JobReach! You're now logged in.",
       });
-      setLocation("/");
+      navigate("/");
     },
     onError: (error: any) => {
       toast({
@@ -80,7 +87,10 @@ export default function Register() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="name"
@@ -184,8 +194,10 @@ export default function Register() {
                 </Button>
 
                 <div className="text-center text-sm">
-                  <span className="text-muted-foreground">Already have an account? </span>
-                  <Link href="/login" className="text-gmail-blue hover:underline">
+                  <span className="text-muted-foreground">
+                    Already have an account?{" "}
+                  </span>
+                  <Link to="/login" className="text-gmail-blue hover:underline">
                     Sign in
                   </Link>
                 </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -30,7 +30,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
-  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -48,12 +49,12 @@ export default function Login() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Login successful",
         description: "Welcome back to JobReach!",
       });
       navigate("/");
-
     },
     onError: (error: any) => {
       toast({
@@ -161,7 +162,7 @@ export default function Login() {
                     Don't have an account?{" "}
                   </span>
                   <Link
-                    href="/register"
+                    to="/register"
                     className="text-gmail-blue hover:underline"
                   >
                     Sign up

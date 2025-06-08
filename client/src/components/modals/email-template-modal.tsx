@@ -24,7 +24,13 @@ export default function EmailTemplateModal({ isOpen, onClose, jobData }: EmailTe
   const [analysis, setAnalysis] = useState<any>(null);
   const { toast } = useToast();
 
-  const { data: user } = useQuery({
+  interface User {
+    name: string;
+    email: string;
+    // add other user properties if needed
+  }
+
+  const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
   });
 

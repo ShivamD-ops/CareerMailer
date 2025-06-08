@@ -1,11 +1,16 @@
 import { Mail, Bell, Settings, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
+type User = {
+  name?: string;
+  // add other user properties if needed
+};
+
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth() as { user: User; logout: () => void };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -17,19 +22,33 @@ export default function Header() {
               <div className="w-8 h-8 bg-gmail-blue rounded-lg flex items-center justify-center">
                 <Mail className="text-white text-sm" />
               </div>
-              <span className="text-xl font-bold text-foreground">JobReach</span>
+              <span className="text-xl font-bold text-foreground">
+                JobReach
+              </span>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-gmail-blue border-b-2 border-gmail-blue font-medium px-1 pb-4">
+              <a
+                href="#"
+                className="text-gmail-blue border-b-2 border-gmail-blue font-medium px-1 pb-4"
+              >
                 Dashboard
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4"
+              >
                 Templates
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4"
+              >
                 Analytics
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-foreground transition-colors px-1 pb-4"
+              >
                 Settings
               </a>
             </nav>
@@ -45,16 +64,21 @@ export default function Header() {
                 3
               </Badge>
             </div>
-            <Link href="/settings">
+            <Link to="/settings">
               <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5 text-muted-foreground" />
               </Button>
             </Link>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{user?.name || "User"}</span>
+              <span className="text-sm font-medium">
+                {user?.name || "User"}
+              </span>
               <div className="w-8 h-8 bg-gmail-blue rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-medium">
-                  {user?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                  {user?.name
+                    ?.split(" ")
+                    .map((n: string) => n[0])
+                    .join("") || "U"}
                 </span>
               </div>
               <Button variant="ghost" size="icon" onClick={logout}>

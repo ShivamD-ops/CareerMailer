@@ -9,6 +9,11 @@ import { formatDate, getStatusBadgeColor, getResponseBadgeColor } from "@/lib/ut
 export default function ApplicationsTable() {
   const { data: applications = [] } = useQuery({
     queryKey: ["/api/applications"],
+    queryFn: async () => {
+      const res = await fetch("/api/applications");
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    },
   });
 
   const getResponseStatus = (status: string) => {

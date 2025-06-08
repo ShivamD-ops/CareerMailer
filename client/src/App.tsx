@@ -10,6 +10,7 @@ import { Routes, Route } from "react-router-dom";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import { useEffect } from "react";
+import SendMailPage from "./pages/sendmailTest";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -35,6 +36,7 @@ function Router() {
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/sendmail" element={<SendMailPage />} />
       <Route element={<NotFound />} />
     </Routes>
   );
